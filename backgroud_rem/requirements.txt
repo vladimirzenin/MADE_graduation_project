@@ -1,0 +1,5 @@
+numpy==1.21.1
+torchvision==0.10.0+cu102
+scipy==1.7.1
+torch==1.10.0+cu113
+Pillow==8.4.0
