@@ -18,6 +18,31 @@ def postprocess(image):
     return image
 
 
+def get_face_hair_mask(img_mask):
+    im_msk_np = np.asarray(img_mask)
+    im_2 = im_msk_np.copy()
+    im_11 = im_msk_np.copy()
+    im_13 = im_msk_np.copy()
+    im_1 = im_msk_np.copy()
+    
+    # 1 - головной убор -> 38 при чтении cv2
+    # 2 - волосы -> 75 при чтении cv2
+    # 11 - лицо и шея (atr mask)
+    # 13 - лицо (lip mask) -> 72 при чтении cv2
+    im_2[im_msk_np != 75] = 0
+    im_11[im_msk_np != 11] = 0
+    im_13[im_msk_np != 72] = 0
+    im_1[im_msk_np != 38] = 0
+    im_msk_np = im_2 + im_11 + im_13 + im_1
+
+    im_msk_np[im_msk_np == 75] = 255
+    im_msk_np[im_msk_np == 11] = 255
+    im_msk_np[im_msk_np == 72] = 255
+    im_msk_np[im_msk_np == 38] = 255
+    
+    return im_msk_np
+
+
 def main(args):
 
     input_path = args.dir_image
@@ -52,15 +77,19 @@ def main(args):
     for ipath, mpath in zip(image_paths, mask_paths):
         split_fn = os.path.basename(ipath).split('.')
         filename = split_fn[0]
-
-        orig_img = cv2.resize(cv2.imread(ipath, cv2.IMREAD_COLOR), (512, 512))
-        msk_orig_img = cv2.resize(cv2.imread(mpath, cv2.IMREAD_COLOR), (512, 512))
+        
+        image = cv2.imread(ipath, cv2.IMREAD_COLOR)
+        h_img, w_img, channels = image.shape
+        orig_img = cv2.resize(image, (512, 512))
+        
+        mask = cv2.imread(mpath, cv2.IMREAD_GRAYSCALE)
+        mask = get_face_hair_mask(mask)
+        msk_orig_img = cv2.resize(mask, (512, 512))
         
         img_tensor = (ToTensor()(orig_img) * 2.0 - 1.0).unsqueeze(0)
         h, w, c = orig_img.shape
         mask = np.asarray(msk_orig_img, np.uint8)
-        mask = np.max(mask, 2)
-        mask = np.expand_dims(mask, axis=2)
+        mask = cv2.dilate(mask, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (4, 4)))
         image_copy = orig_img.copy()
         
         with torch.no_grad():
@@ -73,8 +102,18 @@ def main(args):
         	masked_np = postprocess(masked_tensor[0])
         	comp_np = postprocess(comp_tensor[0])
         
+        if w_img > h_img:
+            aspect_ratio = float(w_img)/h_img
+            comp_np = cv2.resize(comp_np, (int(512 * aspect_ratio), 512), cv2.INTER_AREA)
+            masked_np = cv2.resize(masked_np, (int(512 * aspect_ratio), 512), cv2.INTER_AREA)
+        elif h_img > w_img:
+            aspect_ratio = float(h_img)/w_img
+            comp_np = cv2.resize(comp_np, (512, int(512 * aspect_ratio)), cv2.INTER_AREA)
+            masked_np = cv2.resize(masked_np, (512, int(512 * aspect_ratio)), cv2.INTER_AREA)
+        
         #cv2.imwrite(os.path.join(output_path, f'{filename}_pred.png'), pred_np)
         cv2.imwrite(os.path.join(output_path, f'{filename}_comp.png'), comp_np)
+        #cv2.imwrite(os.path.join(output_path, f'{filename}_mask.png'), masked_np)
         print('[**] save successfully!')
 
 
