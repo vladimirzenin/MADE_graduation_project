@@ -99,14 +99,15 @@ def main(args):
             masked_np = postprocess(masked_tensor[0])
             comp_np = postprocess(comp_tensor[0])
         
-        if w_img > h_img:
-            aspect_ratio = float(w_img)/h_img
-            comp_np = cv2.resize(comp_np, (int(512 * aspect_ratio), 512), cv2.INTER_AREA)
-            masked_np = cv2.resize(masked_np, (int(512 * aspect_ratio), 512), cv2.INTER_AREA)
-        elif h_img > w_img:
-            aspect_ratio = float(h_img)/w_img
-            comp_np = cv2.resize(comp_np, (512, int(512 * aspect_ratio)), cv2.INTER_AREA)
-            masked_np = cv2.resize(masked_np, (512, int(512 * aspect_ratio)), cv2.INTER_AREA)
+#        if w_img > h_img:
+#            aspect_ratio = float(w_img)/h_img
+#            comp_np = cv2.resize(comp_np, (int(512 * aspect_ratio), 512), cv2.INTER_AREA)
+#            masked_np = cv2.resize(masked_np, (int(512 * aspect_ratio), 512), cv2.INTER_AREA)
+#        elif h_img > w_img:
+#            aspect_ratio = float(h_img)/w_img
+#            comp_np = cv2.resize(comp_np, (512, int(512 * aspect_ratio)), cv2.INTER_AREA)
+#            masked_np = cv2.resize(masked_np, (512, int(512 * aspect_ratio)), cv2.INTER_AREA)
+        comp_np = cv2.resize(comp_np, (w_img, h_img), cv2.INTER_AREA)
         
         cv2.imwrite(os.path.join(output_path, f'{filename}_comp.png'), comp_np)
         # При необходимости можно вывести промежуточные изображения:
