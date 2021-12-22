@@ -3,6 +3,7 @@ import os
 import importlib
 import numpy as np
 from glob import glob 
+import json
 
 import torch
 from torchvision.transforms import ToTensor
@@ -17,30 +18,24 @@ def postprocess(image):
     image = image.cpu().numpy().astype(np.uint8)
     return image
 
-
-def get_face_hair_mask(img_mask):
-    im_msk_np = np.asarray(img_mask)
-    im_2 = im_msk_np.copy()
-    im_11 = im_msk_np.copy()
-    im_13 = im_msk_np.copy()
-    im_1 = im_msk_np.copy()
     
-    # 1 - головной убор -> 38 при чтении cv2
-    # 2 - волосы -> 75 при чтении cv2
-    # 11 - лицо и шея (atr mask)
-    # 13 - лицо (lip mask) -> 72 при чтении cv2
-    im_2[im_msk_np != 75] = 0
-    im_11[im_msk_np != 11] = 0
-    im_13[im_msk_np != 72] = 0
-    im_1[im_msk_np != 38] = 0
-    im_msk_np = im_2 + im_11 + im_13 + im_1
-
-    im_msk_np[im_msk_np == 75] = 255
-    im_msk_np[im_msk_np == 11] = 255
-    im_msk_np[im_msk_np == 72] = 255
-    im_msk_np[im_msk_np == 38] = 255
-    
-    return im_msk_np
+DEFAULT_LABELS = "src/mask_labels.json"
+VERBOSE = False
+def get_mask(mask_img, del_labels, verbose=False, verbose_name=""):
+    f = open(DEFAULT_LABELS)
+    labels = json.load(f)
+    f.close()
+    for key in labels[del_labels]:
+        current_color = np.array(labels[del_labels][key])
+        current_color = current_color[::-1]
+        idxs = np.where(np.all(mask_img == current_color, axis=-1))
+        if len(idxs) == 2:
+            mask_img[idxs[0], idxs[1]] = 0
+    mask_img[np.any(mask_img != [0, 0, 0], axis=-1)] = [1, 1, 1]
+    if verbose:
+        cv2.imwrite(os.path.join(args.output_dir, verbose_name + "_skin_mask.png"), mask_img)
+        print(f"Skin mask saved: {verbose_name}_skin_mask.png")
+    return mask_img
 
 
 def main(args):
@@ -82,8 +77,13 @@ def main(args):
         h_img, w_img, channels = image.shape
         orig_img = cv2.resize(image, (512, 512))
         
-        mask = cv2.imread(mpath, cv2.IMREAD_GRAYSCALE)
-        mask = get_face_hair_mask(mask)
+        mask = cv2.imread(mpath, cv2.IMREAD_COLOR) # IMREAD_GRAYSCALE
+        #mask = get_face_hair_mask(mask)
+        mask = get_mask(mask_img=mask, del_labels="LIP_HEAD_DEL_2", verbose=VERBOSE, verbose_name="body")
+        mask = np.max(mask, 2)
+        mask *= 255
+        #print(mask[105])
+        
         msk_orig_img = cv2.resize(mask, (512, 512))
         
         img_tensor = (ToTensor()(orig_img) * 2.0 - 1.0).unsqueeze(0)

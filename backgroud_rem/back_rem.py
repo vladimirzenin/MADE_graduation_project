@@ -41,7 +41,7 @@ def main(args):
 		if im_name.split('.')[-1] == 'png' or im_name.split('.')[-1] == 'jpg' or im_name.split('.')[-1] == 'jpeg':
 			# read image
 			print(im_name)
-			im = Image.open(os.path.join(args.input_path, im_name))
+			im = Image.open(os.path.join(args.input_path, im_name)).convert('RGB')
 
 			# unify image channels to 3
 			im = np.asarray(im)

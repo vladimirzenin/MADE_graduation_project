@@ -12,5 +12,5 @@ Where:
 - -q is qualily (size of image for input to the network)
 
 ### Fork info
-**This repository is fork of:** 
+**This repository is part-fork of:** 
 https://github.com/ZHKKKe/MODNet
