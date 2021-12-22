@@ -15,7 +15,7 @@ Where:
 In the requirements.txt file
 
 ### Fork info
-**This repository is fork of:**  
+**This repository is part-fork of:**  
 https://github.com/polarisZhao/mtcnn-pytorch
 
 ### Credit

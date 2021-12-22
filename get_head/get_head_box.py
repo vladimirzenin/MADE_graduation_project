@@ -8,15 +8,14 @@ import argparse
 
 def main(args):
 
-	im_names = os.listdir(args.input_path)
-	dots = {}
-	for im_name in im_names:
-		if im_name.split('.')[-1] == 'png' or im_name.split('.')[-1] == 'jpg' or im_name.split('.')[-1] == 'jpeg':
-			name, box, landmark = image_process_squad(os.path.join(args.input_path, im_name), args.output_path)
-			#f.write(f'{name};{box[0]},{box[1]},{box[2]},{box[3]}; {landmark}' + '\n')
-			dots[str(name)] = {'landmarks': landmark.tolist()}
-	with open(os.path.join(args.output_path, 'data.json'), 'w') as f:
-		json.dump(dots, f)
+    im_names = os.listdir(args.input_path)
+    dots = {}
+    for im_name in im_names:
+        if im_name.split('.')[-1] == 'png' or im_name.split('.')[-1] == 'jpg' or im_name.split('.')[-1] == 'jpeg':
+            name, box, landmark = image_process_squad(os.path.join(args.input_path, im_name), args.output_path)
+            dots[str(name)] = {'landmarks': landmark.tolist()}
+    with open(os.path.join(args.output_path, 'data.json'), 'w') as f:
+        json.dump(dots, f)
 
 
 def image_process_squad(path, output_folder):
@@ -52,7 +51,8 @@ def image_process_squad(path, output_folder):
         bad_border = box[0] < 0 or box[2] > image.width or box[1] < 0 or box[3] > image.height
     box = box.astype(int)
     
-    img_name = path.split('\\')[-1].split('.')[-2] + '.png'
+    img_name = ''.join(os.path.basename(path).split('.')[:-1]) + '.png'
+    print(img_name)
     cropped_img = image.crop(list(box[0:4]))
     cropped_img.save(os.path.join(output_folder, img_name))
     
