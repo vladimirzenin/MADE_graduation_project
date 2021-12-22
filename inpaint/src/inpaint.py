@@ -9,7 +9,6 @@ import torch
 from torchvision.transforms import ToTensor
 
 from utils.option import args
-#import argparse
 
 def postprocess(image):
     image = torch.clamp(image, -1., 1.)
@@ -78,11 +77,9 @@ def main(args):
         orig_img = cv2.resize(image, (512, 512))
         
         mask = cv2.imread(mpath, cv2.IMREAD_COLOR) # IMREAD_GRAYSCALE
-        #mask = get_face_hair_mask(mask)
         mask = get_mask(mask_img=mask, del_labels="LIP_HEAD_DEL_2", verbose=VERBOSE, verbose_name="body")
         mask = np.max(mask, 2)
         mask *= 255
-        #print(mask[105])
         
         msk_orig_img = cv2.resize(mask, (512, 512))
         
@@ -93,14 +90,14 @@ def main(args):
         image_copy = orig_img.copy()
         
         with torch.no_grad():
-        	mask_tensor = (ToTensor()(mask)).unsqueeze(0)
-        	masked_tensor = (img_tensor * (1 - mask_tensor).float()) + mask_tensor
-        	pred_tensor = model(masked_tensor, mask_tensor)
-        	comp_tensor = (pred_tensor * mask_tensor + img_tensor * (1 - mask_tensor))
+            mask_tensor = (ToTensor()(mask)).unsqueeze(0)
+            masked_tensor = (img_tensor * (1 - mask_tensor).float()) + mask_tensor
+            pred_tensor = model(masked_tensor, mask_tensor)
+            comp_tensor = (pred_tensor * mask_tensor + img_tensor * (1 - mask_tensor))
 
-        	pred_np = postprocess(pred_tensor[0])
-        	masked_np = postprocess(masked_tensor[0])
-        	comp_np = postprocess(comp_tensor[0])
+            pred_np = postprocess(pred_tensor[0])
+            masked_np = postprocess(masked_tensor[0])
+            comp_np = postprocess(comp_tensor[0])
         
         if w_img > h_img:
             aspect_ratio = float(w_img)/h_img
@@ -111,8 +108,9 @@ def main(args):
             comp_np = cv2.resize(comp_np, (512, int(512 * aspect_ratio)), cv2.INTER_AREA)
             masked_np = cv2.resize(masked_np, (512, int(512 * aspect_ratio)), cv2.INTER_AREA)
         
-        #cv2.imwrite(os.path.join(output_path, f'{filename}_pred.png'), pred_np)
         cv2.imwrite(os.path.join(output_path, f'{filename}_comp.png'), comp_np)
+        # При необходимости можно вывести промежуточные изображения:
+        #cv2.imwrite(os.path.join(output_path, f'{filename}_pred.png'), pred_np)
         #cv2.imwrite(os.path.join(output_path, f'{filename}_mask.png'), masked_np)
         print('[**] save successfully!')
 
